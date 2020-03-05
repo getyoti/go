@@ -1253,6 +1253,26 @@ func TestNewMultiValue(t *testing.T) {
 	assertIsExpectedDocumentImagesAttribute(t, documentImagesAttributeItems, multiValueAttribute.Anchors()[0])
 }
 
+func TestProfileAllowsMutipleAttributesWithSameName(t *testing.T) {
+	firstAttribute := createStringAttribute("full_name", []byte("some_value"), []*yotiprotoattr.Anchor{})
+	secondAttribute := createStringAttribute("full_name", []byte("some_other_value"), []*yotiprotoattr.Anchor{})
+
+	var attributeSlice []*yotiprotoattr.Attribute
+	attributeSlice = append(attributeSlice, firstAttribute, secondAttribute)
+
+	var profile = Profile{
+		baseProfile{
+			attributeSlice: attributeSlice,
+		},
+	}
+
+	var fullNames []*attribute.GenericAttribute = profile.GetAttributes("full_name")
+
+	assert.Assert(t, is.Equal(len(fullNames), 2))
+	assert.Assert(t, is.Equal(fullNames[0].Value().(string), "some_value"))
+	assert.Assert(t, is.Equal(fullNames[1].Value().(string), "some_other_value"))
+}
+
 func TestInvalidMultiValueNotReturned(t *testing.T) {
 	var invalidMultiValueItem = &yotiprotoattr.MultiValue_Value{
 		ContentType: yotiprotoattr.ContentType_DATE,
@@ -1435,6 +1455,15 @@ func createAttributeFromTestFile(t *testing.T, filename string) *yotiprotoattr.A
 	assert.Assert(t, is.Nil(err2))
 
 	return attributeStruct
+}
+
+func createStringAttribute(name string, value []byte, anchors []*yotiprotoattr.Anchor) *yotiprotoattr.Attribute {
+	return &yotiprotoattr.Attribute{
+		Name:        name,
+		Value:       value,
+		ContentType: yotiprotoattr.ContentType_STRING,
+		Anchors:     anchors,
+	}
 }
 
 func createAnchorSliceFromTestFile(t *testing.T, filename string) []*yotiprotoattr.Anchor {
